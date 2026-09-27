@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Currency Converter</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#0F5257">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#0F5257;
+    --teal-dark:#0A3A3E;
+    --gold:#C9A227;
+    --paper:#FBF8F1;
+    --ink:#1B2B2C;
+    --ok:#2E7D4F;
+    --err:#B3432B;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:"Atkinson Hyperlegible", system-ui, sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+    -webkit-tap-highlight-color:transparent;
+  }
+  header{
+    background:var(--teal);
+    color:var(--paper);
+    padding:22px 20px 26px;
+    text-align:center;
+  }
+  header h1{
+    margin:0;
+    font-size:1.6rem;
+    font-weight:700;
+    letter-spacing:0.2px;
+  }
+  main{
+    max-width:480px;
+    margin:0 auto;
+    padding:20px 20px 40px;
+  }
+  .card{
+    background:#fff;
+    border:1px solid #E4DFD1;
+    border-radius:18px;
+    padding:22px;
+    margin-bottom:18px;
+    box-shadow:0 1px 0 rgba(0,0,0,0.03);
+  }
+  label{
+    display:block;
+    font-size:1.05rem;
+    font-weight:700;
+    margin-bottom:8px;
+    color:var(--teal-dark);
+  }
+  input[type="text"], input[type="number"]{
+    width:100%;
+    font-size:1.6rem;
+    font-family:inherit;
+    padding:14px 16px;
+    border:2px solid #D8D2BF;
+    border-radius:12px;
+    background:var(--paper);
+    color:var(--ink);
+  }
+  input:focus, select:focus, button:focus{
+    outline:3px solid var(--gold);
+    outline-offset:1px;
+  }
+  .currency-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  select{
+    flex:1;
+    font-size:1.3rem;
+    font-family:inherit;
+    padding:14px 10px;
+    border:2px solid #D8D2BF;
+    border-radius:12px;
+    background:#fff;
+    color:var(--ink);
+    appearance:none;
+    text-align:center;
+    font-weight:700;
+  }
+  .swap-wrap{
+    display:flex;
+    justify-content:center;
+    margin:14px 0;
+  }
+  .swap-btn{
+    width:56px;
+    height:56px;
+    border-radius:50%;
+    border:2px solid var(--teal);
+    background:var(--paper);
+    color:var(--teal);
+    font-size:1.5rem;
+    cursor:pointer;
+  }
+  .swap-btn:active{ background:var(--teal); color:#fff; }
+  .result{
+    text-align:center;
+    padding:6px 0 2px;
+  }
+  .result .amount{
+    font-size:2.1rem;
+    font-weight:700;
+    color:var(--teal-dark);
+    word-break:break-word;
+  }
+  .rate{
+    text-align:center;
+    font-size:1rem;
+    color:#5B6B6B;
+    margin-top:4px;
+  }
+  .status{
+    text-align:center;
+    font-size:0.95rem;
+    margin-top:14px;
+    min-height:1.3em;
+  }
+  .status.ok{ color:var(--ok); }
+  .status.err{ color:var(--err); }
+  footer{
+    text-align:center;
+    font-size:0.85rem;
+    color:#8A8577;
+    padding:0 20px 24px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#15201F;
+      --ink:#EDEAE0;
+    }
+    body{ background:var(--paper); }
+    .card{ background:#1C2827; border-color:#2B3A38; }
+    input, select{ background:#15201F; border-color:#33413F; color:var(--ink); }
+    .rate{ color:#9FB0AE; }
+    footer{ color:#6E7A78; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Currency Converter</h1>
+</header>
+<main>
+  <div class="card">
+    <label for="amount">Amount</label>
+    <input type="text" inputmode="decimal" id="amount" value="1" autocomplete="off">
+  </div>
+
+  <div class="card">
+    <label for="from">From</label>
+    <div class="currency-row">
+      <select id="from" aria-label="From currency"></select>
+    </div>
+
+    <div class="swap-wrap">
+      <button class="swap-btn" id="swapBtn" aria-label="Swap currencies" title="Swap">⇅</button>
+    </div>
+
+    <label for="to">To</label>
+    <div class="currency-row">
+      <select id="to" aria-label="To currency"></select>
+    </div>
+  </div>
+
+  <div class="card result">
+    <div class="amount" id="resultText">—</div>
+    <div class="rate" id="rateText">Loading rate…</div>
+    <div class="status" id="statusText">Connecting…</div>
+  </div>
+</main>
+<footer>Rates from the European Central Bank via frankfurter.app</footer>
+
+<script>
+const CURRENCIES = [
+  ["EUR","Euro"],["USD","US Dollar"],["GBP","British Pound"],
+  ["HUF","Hungarian Forint"],["CHF","Swiss Franc"],["JPY","Japanese Yen"],
+  ["RON","Romanian Leu"],["PLN","Polish Zloty"],["CZK","Czech Koruna"],
+  ["CAD","Canadian Dollar"],["AUD","Australian Dollar"]
+];
+const REFRESH_MS = 60_000;
+
+const fromSel = document.getElementById('from');
+const toSel = document.getElementById('to');
+const amountInput = document.getElementById('amount');
+const resultText = document.getElementById('resultText');
+const rateText = document.getElementById('rateText');
+const statusText = document.getElementById('statusText');
+const swapBtn = document.getElementById('swapBtn');
+
+let currentRate = null;
+let refreshTimer = null;
+
+function fillSelect(sel, defaultCode){
+  sel.innerHTML = '';
+  for (const [code, name] of CURRENCIES){
+    const opt = document.createElement('option');
+    opt.value = code;
+    opt.textContent = `${code} — ${name}`;
+    if (code === defaultCode) opt.selected = true;
+    sel.appendChild(opt);
+  }
+}
+fillSelect(fromSel, 'EUR');
+fillSelect(toSel, 'HUF');
+
+function setStatus(msg, kind){
+  statusText.textContent = msg;
+  statusText.className = 'status' + (kind ? ' ' + kind : '');
+}
+
+function convert(){
+  if (currentRate == null){
+    resultText.textContent = 'Waiting for rate…';
+    return;
+  }
+  const raw = amountInput.value.replace(',', '.');
+  const amount = parseFloat(raw);
+  if (isNaN(amount)){
+    resultText.textContent = 'Enter a valid number';
+    return;
+  }
+  const result = amount * currentRate;
+  resultText.textContent =
+    `${amount.toLocaleString(undefined,{maximumFractionDigits:2})} ${fromSel.value} = ` +
+    `${result.toLocaleString(undefined,{maximumFractionDigits:2})} ${toSel.value}`;
+}
+
+async function updateRate(){
+  const from = fromSel.value;
+  const to = toSel.value;
+
+  if (from === to){
+    currentRate = 1;
+    rateText.textContent = `1 ${from} = 1.0000 ${to}`;
+    setStatus('Rate updated', 'ok');
+    convert();
+    scheduleNext();
+    return;
+  }
+
+  try{
+    setStatus('Updating…', '');
+    const url = `https://api.frankfurter.dev/v2/rate/${from.toLowerCase()}/${to.toLowerCase()}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('bad response');
+    const data = await res.json();
+    const rate = data.rate;
+    if (typeof rate !== 'number') throw new Error('missing rate');
+    currentRate = rate;
+    rateText.textContent = `1 ${from} = ${rate.toFixed(4)} ${to}`;
+    setStatus('Rate updated', 'ok');
+    convert();
+  } catch (err){
+    setStatus('Could not update exchange rate', 'err');
+    console.error(err);
+  }
+  scheduleNext();
+}
+
+function scheduleNext(){
+  if (refreshTimer) clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(updateRate, REFRESH_MS);
+}
+
+function swap(){
+  const f = fromSel.value, t = toSel.value;
+  fromSel.value = t;
+  toSel.value = f;
+  updateRate();
+}
+
+fromSel.addEventListener('change', updateRate);
+toSel.addEventListener('change', updateRate);
+amountInput.addEventListener('input', convert);
+swapBtn.addEventListener('click', swap);
+
+updateRate();
+
+if ('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(console.error);
+  });
+}
+</script>
+</body>
+</html>
